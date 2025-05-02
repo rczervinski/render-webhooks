@@ -45,38 +45,41 @@ app.get('/auth/start', (req, res) => {
 
 // === Callback OAuth ===
 app.get('/auth/callback', async (req, res) => {
+  console.log('Callback acessado com sucesso!');
   const { code } = req.query;
+  if (!code) {
+    console.error('Código de autorização ausente:', req.query);
+    return res.status(400).send('Código não encontrado');
+  }
 
   try {
-    const tokenResponse = await axios.post('https://api.tiendanube.com/v1/oauth/token', {
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      redirect_uri: REDIRECT_URI,
-      code,
-      grant_type: 'authorization_code'
-    });
+    // TROCA O CODE PELO ACCESS_TOKEN
+    const response = await axios.post(
+      'https://api.tiendanube.com/v1/oauth/token',
+      {
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: REDIRECT_URI
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-    const { access_token, refresh_token, user_id } = tokenResponse.data;
-
-    // Salvar tokens e user_id (ex.: no banco ou memória)
-    storeAuthData[user_id] = {
-      access_token,
-      refresh_token,
-      store_id: user_id
-    };
-
-    console.log('Autenticado para loja ID:', user_id);
+    console.log('Resposta da Nuvemshop:', response.data);
 
     res.send(`
-      <h1>Autenticado com sucesso!</h1>
-      <p>Loja ID: ${user_id}</p>
-      <p>Access Token: ${access_token}</p>
-      <hr />
-      <a href="/register-webhooks">Clique aqui para registrar webhooks obrigatórios</a>
+      <h2>Autenticado com sucesso!</h2>
+      <p>${JSON.stringify(response.data)}</p>
     `);
+
   } catch (error) {
-    console.error('Erro na autenticação:', error.response?.data || error.message);
-    res.status(500).send('Erro na autenticação');
+    console.error('Erro ao trocar code por token:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).send('Erro na autenticação');
   }
 });
 
@@ -84,7 +87,7 @@ app.get('/auth/callback', async (req, res) => {
 app.get('/register-webhooks', async (req, res) => {
   const storeId = Object.keys(storeAuthData)[0];
   const accessToken = storeAuthData[storeId].access_token;
-  const webhookBaseUrl = 'https://seuapp.com/webhooks';
+  const webhookBaseUrl = 'https://render-webhooks.onrender.com/webhooks';
 
   const webhooks = [
     {
