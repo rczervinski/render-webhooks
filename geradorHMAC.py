@@ -15,11 +15,10 @@ def generate_hmac(payload_dict, secret):
 def main():
     print("=== Gerador de HMAC para Webhooks da Nuvemshop ===\n")
 
-    # Seu APP_SECRET (substitua pelo seu segredo real)
     APP_SECRET = input("Digite seu APP_SECRET: ").strip()
 
     if not APP_SECRET:
-        print("❌ APP_SECRET não pode ser vazio.")
+        print("APP_SECRET não pode ser vazio.")
         return
 
     print("\nDigite o payload do webhook (exemplo abaixo):")
@@ -34,15 +33,15 @@ def main():
         payload_input = input("\nCole o payload JSON aqui:\n")
         payload = json.loads(payload_input)
     except json.JSONDecodeError as e:
-        print(f"❌ Erro ao decodificar o JSON: {e}")
+        print(f"Erro ao decodificar o JSON: {e}")
         return
 
     hmac_value = generate_hmac(payload, APP_SECRET)
 
-    print("\n✅ HMAC gerado (use no cabeçalho x-linkedstore-hmac-sha256):\n")
+    print("\nHMAC gerado (use no cabeçalho x-linkedstore-hmac-sha256):\n")
     print(hmac_value)
 
-    print("\n✅ Payload formatado (para enviar no corpo da requisição):\n")
+    print("\nPayload formatado (para enviar no corpo da requisição):\n")
     print(json.dumps(payload, indent=2))
 
 

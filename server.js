@@ -48,7 +48,7 @@ app.get('/auth/callback', async (req, res) => {
   const { code } = req.query;
 
   if (!code) {
-    console.warn('❌ Código ausente:', req.query);
+    console.warn(' Código ausente:', req.query);
     return res.status(400).send('Código de autorização não encontrado');
   }
 
@@ -56,7 +56,8 @@ app.get('/auth/callback', async (req, res) => {
 
   try {
     const response = await axios.post(
-      'https://www.nuvemshop.com.br/apps/authorize/token', // ✅ URL correta!
+      'https://www.nuvemshop.com.br/apps/authorize/token',
+
       {
         client_id: process.env.CLIENT_ID,
         client_secret: process.env.CLIENT_SECRET,
@@ -71,9 +72,8 @@ app.get('/auth/callback', async (req, res) => {
       }
     );
 
-    console.log('✅ Token recebido:', response.data);
+    console.log('Token recebido:', response.data);
 
-    // Salve tokens no banco de dados
     storeAuthData[response.data.user_id] = response.data;
 
     res.send(`
@@ -83,7 +83,7 @@ app.get('/auth/callback', async (req, res) => {
     `);
 
   } catch (error) {
-    console.error('🚫 Erro ao trocar code por token:', {
+    console.error('Erro ao trocar code por token:', {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,
