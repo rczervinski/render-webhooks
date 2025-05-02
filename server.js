@@ -3,10 +3,8 @@ const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware para parsear JSON
 app.use(express.json());
 
-// Validação HMAC (substitua pelo seu APP_SECRET)
 const APP_SECRET = process.env.APP_SECRET;
 
 function verifyWebhook(data, hmacHeader) {
@@ -16,22 +14,36 @@ function verifyWebhook(data, hmacHeader) {
   return hash === hmacHeader;
 }
 
-// Endpoint do webhook
-app.post('/webhook', (req, res) => {
+function handleWebhook(req, res, label) {
   const hmacHeader = req.headers['x-linkedstore-hmac-sha256'];
   const data = JSON.stringify(req.body);
 
   if (!verifyWebhook(data, hmacHeader)) {
+    console.warn(`HMAC inválido em ${label}`);
     return res.status(401).send('Invalid HMAC signature');
   }
 
-  console.log('Webhook recebido:', req.body);
+  console.log(`${label} webhook recebido:`, req.body);
   res.status(200).send('OK');
+}
+
+// Webhook: store/redact
+app.post('/webhooks/store-redact', (req, res) => {
+  handleWebhook(req, res, 'store/redact');
 });
 
-// Rota de teste
+// Webhook: customers/redact
+app.post('/webhooks/customers-redact', (req, res) => {
+  handleWebhook(req, res, 'customers/redact');
+});
+
+// Webhook: customers/data_request
+app.post('/webhooks/customers-data-request', (req, res) => {
+  handleWebhook(req, res, 'customers/data_request');
+});
+
 app.get('/', (req, res) => {
-  res.send('Webhook está funcionando!');
+  res.send('Servidor de Webhooks da Nuvemshop está online!');
 });
 
 app.listen(PORT, () => {
