@@ -1,14 +1,14 @@
-const express = require('express');
-const cryptoNativo = require('crypto');
-const bodyParser = require('body-parser');
-const axios = require('axios');
+import express from 'express';
+import { createHmac, timingSafeEqual } from 'crypto';
+import { json } from 'body-parser';
+import { post } from 'axios';
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(bodyParser.json());
+app.use(json());
 
 // Variáveis do .env
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -22,11 +22,11 @@ let storeAuthData = {};
 // === Função para validar HMAC ===
 function verifyWebhook(data, hmacHeader) {
   if (!hmacHeader) return false;
-  const computedHash = cryptoNativo.createHmac('sha256', APP_SECRET)
+  const computedHash = createHmac('sha256', APP_SECRET)
                                    .update(data)
                                    .digest('base64');
 
-  return cryptoNativo.timingSafeEqual(
+  return timingSafeEqual(
     Buffer.from(computedHash),
     Buffer.from(hmacHeader)
   );
@@ -48,7 +48,7 @@ app.get('/auth/callback', async (req, res) => {
   const { code } = req.query;
 
   try {
-    const tokenResponse = await axios.post('https://api.tiendanube.com/v1/oauth/token', {
+    const tokenResponse = await post('https://api.tiendanube.com/v1/oauth/token', {
       client_id: CLIENT_ID,
       client_secret: CLIENT_SECRET,
       redirect_uri: REDIRECT_URI,
@@ -103,7 +103,7 @@ app.get('/register-webhooks', async (req, res) => {
 
   for (const wh of webhooks) {
     try {
-      const response = await axios.post(
+      const response = await post(
         'https://api.tiendanube.com/v1/webhooks',
         wh,
         {
