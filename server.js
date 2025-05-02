@@ -45,23 +45,30 @@ app.get('/auth/start', (req, res) => {
 
 // === Callback OAuth ===
 app.get('/auth/callback', async (req, res) => {
-  console.log('Callback acessado com sucesso!');
   const { code } = req.query;
+
+  // Log 1: Verificar se o code foi recebido
   if (!code) {
-    console.error('Código de autorização ausente:', req.query);
+    console.warn('❌ Código de autorização ausente:', req.query);
     return res.status(400).send('Código não encontrado');
   }
 
+  console.log('📦 Code recebido:', code);
+
   try {
-    // TROCA O CODE PELO ACCESS_TOKEN
+    // Log 2: Mostrar dados enviados para a API
+    console.log('🔄 Trocando code por access_token...');
+    console.log('CLIENT_ID:', process.env.CLIENT_ID);
+    console.log('REDIRECT_URI:', process.env.REDIRECT_URI);
+
     const response = await axios.post(
       'https://api.tiendanube.com/v1/oauth/token',
       {
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
+        client_id: process.env.CLIENT_ID,
+        client_secret: process.env.CLIENT_SECRET,
         code,
         grant_type: 'authorization_code',
-        redirect_uri: REDIRECT_URI
+        redirect_uri: process.env.REDIRECT_URI
       },
       {
         headers: {
@@ -70,16 +77,39 @@ app.get('/auth/callback', async (req, res) => {
       }
     );
 
-    console.log('Resposta da Nuvemshop:', response.data);
+    // Log 3: Resposta da Nuvemshop
+    console.log('✅ Resposta da Nuvemshop:', response.data);
 
     res.send(`
       <h2>Autenticado com sucesso!</h2>
-      <p>${JSON.stringify(response.data)}</p>
+      <pre>${JSON.stringify(response.data, null, 2)}</pre>
     `);
 
   } catch (error) {
-    console.error('Erro ao trocar code por token:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).send('Erro na autenticação');
+    // Log 4: Detalhes do erro
+    console.error('🚫 Erro ao trocar code por token:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      headers: error.config?.headers,
+      url: error.config?.url,
+      method: error.config?.method,
+      dataSent: error.config?.data
+    });
+
+    res.status(error.response?.status || 500).send(`
+      <h2>Erro na autenticação</h2>
+      <p><strong>Status:</strong> ${error.response?.status || 'Desconhecido'}</p>
+      <p><strong>Mensagem:</strong> ${error.message}</p>
+      <pre><strong>Detalhes:</strong>\n${JSON.stringify({
+        data: error.response?.data,
+        config: {
+          url: error.config.url,
+          method: error.config.method,
+          dataSent: error.config.data
+        }
+      }, null, 2)}</pre></p>
+    `);
   }
 });
 
