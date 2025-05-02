@@ -47,22 +47,16 @@ app.get('/auth/start', (req, res) => {
 app.get('/auth/callback', async (req, res) => {
   const { code } = req.query;
 
-  // Log 1: Verificar se o code foi recebido
   if (!code) {
-    console.warn('❌ Código de autorização ausente:', req.query);
-    return res.status(400).send('Código não encontrado');
+    console.warn('❌ Código ausente:', req.query);
+    return res.status(400).send('Código de autorização não encontrado');
   }
 
   console.log('📦 Code recebido:', code);
 
   try {
-    // Log 2: Mostrar dados enviados para a API
-    console.log('🔄 Trocando code por access_token...');
-    console.log('CLIENT_ID:', process.env.CLIENT_ID);
-    console.log('REDIRECT_URI:', process.env.REDIRECT_URI);
-
     const response = await axios.post(
-      'https://api.tiendanube.com/v1/oauth/token',
+      'https://www.nuvemshop.com.br/apps/authorize/token', // ✅ URL correta!
       {
         client_id: process.env.CLIENT_ID,
         client_secret: process.env.CLIENT_SECRET,
@@ -77,38 +71,37 @@ app.get('/auth/callback', async (req, res) => {
       }
     );
 
-    // Log 3: Resposta da Nuvemshop
-    console.log('✅ Resposta da Nuvemshop:', response.data);
+    console.log('✅ Token recebido:', response.data);
+
+    // Salve tokens no banco de dados
+    storeAuthData[response.data.user_id] = response.data;
 
     res.send(`
       <h2>Autenticado com sucesso!</h2>
       <pre>${JSON.stringify(response.data, null, 2)}</pre>
+      <a href="/register-webhooks">Registrar Webhooks</a>
     `);
 
   } catch (error) {
-    // Log 4: Detalhes do erro
     console.error('🚫 Erro ao trocar code por token:', {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,
-      headers: error.config?.headers,
       url: error.config?.url,
-      method: error.config?.method,
-      dataSent: error.config?.data
+      method: error.config?.method
     });
 
     res.status(error.response?.status || 500).send(`
       <h2>Erro na autenticação</h2>
       <p><strong>Status:</strong> ${error.response?.status || 'Desconhecido'}</p>
-      <p><strong>Mensagem:</strong> ${error.message}</p>
-      <pre><strong>Detalhes:</strong>\n${JSON.stringify({
+      <pre>${JSON.stringify({
         data: error.response?.data,
         config: {
           url: error.config.url,
           method: error.config.method,
           dataSent: error.config.data
         }
-      }, null, 2)}</pre></p>
+      }, null, 2)}</pre>
     `);
   }
 });
