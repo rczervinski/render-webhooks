@@ -8,10 +8,27 @@ app.use(express.json());
 const APP_SECRET = process.env.APP_SECRET;
 
 function verifyWebhook(data, hmacHeader) {
-  const hash = crypto.createHmac('sha256', APP_SECRET)
-                     .update(data)
-                     .digest('base64');
-  return hash === hmacHeader;
+  if (!hmacHeader) {
+    console.error("Cabeçalho HMAC ausente");
+    return false;
+  }
+
+  if (!data) {
+    console.error("Dados do corpo da requisição ausentes");
+    return false;
+  }
+
+  const computedHash = crypto.createHmac('sha256', APP_SECRET)
+                             .update(data)
+                             .digest('base64');
+
+  console.log("HMAC recebido:", hmacHeader);
+  console.log("HMAC calculado:", computedHash);
+
+  return crypto.timingSafeEqual(
+    Buffer.from(computedHash),
+    Buffer.from(hmacHeader)
+  );
 }
 
 function handleWebhook(req, res, label) {
